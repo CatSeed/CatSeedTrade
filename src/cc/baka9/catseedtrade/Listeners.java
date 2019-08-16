@@ -45,7 +45,9 @@ class Listeners implements Listener {
 
     @EventHandler
     public void onBreakBlock(BlockBreakEvent event){
-        if (event.isCancelled()) return;
+        if (event.isCancelled()) {
+            return;
+        }
         Player player = event.getPlayer();
         Trade trade = TradeHelper.getPlayerEnterTrade(player);
         if (trade != null) {

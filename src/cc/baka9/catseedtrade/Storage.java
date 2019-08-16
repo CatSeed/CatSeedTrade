@@ -5,7 +5,10 @@ import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.*;
+import java.util.logging.Logger;
 
 public class Storage {
     private static CatSeedTrade catSeedTrade = CatSeedTrade.getInstance();
@@ -18,6 +21,7 @@ public class Storage {
         try {
             File file = getTradeFile(trade);
             FileConfiguration configuration = YamlConfiguration.loadConfiguration(file);
+            configuration.set("uuid", trade.getUuid().toString());
             configuration.set("name", trade.getName());
             configuration.set("bio", trade.getBio());
             configuration.set("owner", trade.getOwner());
@@ -29,7 +33,7 @@ public class Storage {
             configuration.set("member", trade.getMember());
             configuration.set("level", trade.getLevel());
             configuration.set("request", new ArrayList<>(trade.getRequest()));
-            configuration.set("exp",trade.getExp());
+            configuration.set("exp", trade.getExp());
             configuration.save(file);
         } catch (IOException e) {
             e.printStackTrace();
@@ -39,7 +43,9 @@ public class Storage {
     public static void delOne(Trade trade){
         try {
             File file = getTradeFile(trade);
-            if (file.delete()) catSeedTrade.getLogger().info("已删除文件 " + file.getAbsolutePath());
+            if (file.delete()) {
+                catSeedTrade.getLogger().info("已删除文件 " + file.getAbsolutePath());
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -48,18 +54,61 @@ public class Storage {
     public static void load(){
         List<Trade> list = TradeHelper.getList();
         File dataFolder = new File(catSeedTrade.getDataFolder(), "data");
-        if (!dataFolder.exists()) return;
-        File[] files = dataFolder.listFiles();
-        if (files == null) return;
-        for (File file : files) {
-            FileConfiguration conf = YamlConfiguration.loadConfiguration(file);
-            Map<String, Double> member = new HashMap<>();
-            conf.getConfigurationSection("member").getKeys(false).forEach(playerName -> member.put(playerName, conf.getDouble("member." + playerName)));
-            Trade trade = new Trade(conf.getString("name"), conf.getString("bio"), conf.getString("owner"),
-                    member, conf.getInt("level"), new HashSet<>(conf.getStringList("request")),conf.getDouble("exp"));
-            list.add(trade);
-
+        if (!dataFolder.exists()) {
+            return;
         }
+        File[] files = dataFolder.listFiles();
+        if (files == null) {
+            return;
+        }
+        for (File file : files) {
+            if (!file.getName().endsWith(".yml")) {
+                continue;
+            }
+            FileConfiguration conf = YamlConfiguration.loadConfiguration(file);
+            Set<String> memberKeys = conf.getConfigurationSection("member").getKeys(false);
+            Map<String, Double> member = new HashMap<>(memberKeys.size());
+            memberKeys.forEach(playerName -> member.put(playerName, conf.getDouble("member." + playerName)));
+            Trade trade = new Trade(
+                    UUID.fromString(conf.getString("uuid", String.valueOf(UUID.randomUUID()))),
+                    conf.getString("name"),
+                    conf.getString("bio"),
+                    conf.getString("owner"),
+                    member, conf.getInt("level"),
+                    new HashSet<>(conf.getStringList("request")),
+                    conf.getDouble("exp")
+            );
+            list.add(trade);
+            //处理旧数据文件
+            if (backupOldDataFile(file)) {
+                saveOne(trade);
+            }
+        }
+
+    }
+
+    private static final String UUID_REGEX = "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$";
+
+    /**
+     * 处理旧数据文件
+     */
+    private static boolean backupOldDataFile(File file){
+        if (!file.getName().replace(".yml", "").matches(UUID_REGEX)) {
+            Logger logger = CatSeedTrade.getInstance().getLogger();
+            logger.info("发现旧数据文件 " + file.getAbsolutePath() + " 正在转移到备份文件夹下");
+            try {
+                File target = new File(catSeedTrade.getDataFolder(), "data/backupOldDataFile/" + file.getName());
+                if (target.getParentFile().mkdirs()) {
+                    logger.info("新建文件夹" + target.getParentFile());
+                }
+                Files.move(file.toPath(), target.toPath(), StandardCopyOption.ATOMIC_MOVE);
+                logger.info(file.getAbsolutePath() + " 转移完毕!");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return true;
+        }
+        return false;
 
     }
 
@@ -73,7 +122,7 @@ public class Storage {
         if (!dataFolder.exists() && dataFolder.mkdirs()) {
             catSeedTrade.getLogger().info("已新建目录 " + dataFolder.getAbsolutePath());
         }
-        File file = new File(dataFolder, trade.getName() + ".yml");
+        File file = new File(dataFolder, trade.getUuid().toString() + ".yml");
 
         if (!file.exists() && file.createNewFile()) {
             catSeedTrade.getLogger().info("已新建文件 " + file.getAbsolutePath());

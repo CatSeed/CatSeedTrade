@@ -3,7 +3,7 @@ package cc.baka9.catseedtrade;
 import java.util.*;
 
 public class Trade {
-
+    private UUID uuid;
     private String name;
     private String bio;
     private String owner;
@@ -12,7 +12,8 @@ public class Trade {
     private Set<String> request;
     private double exp;
 
-    public Trade(String name, String bio, String owner, Map<String, Double> member, int level, Set<String> request, double exp){
+    public Trade(UUID uuid, String name, String bio, String owner, Map<String, Double> member, int level, Set<String> request, double exp){
+        this.uuid = uuid;
         this.name = name;
         this.bio = bio;
         this.owner = owner;
@@ -83,16 +84,24 @@ public class Trade {
         this.level = level;
     }
 
+    public UUID getUuid(){
+        return uuid;
+    }
+
     @Override
     public boolean equals(Object o){
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         Trade trade = (Trade) o;
-        return Objects.equals(name, trade.name);
+        return Objects.equals(uuid, trade.uuid);
     }
 
     @Override
     public int hashCode(){
-        return Objects.hash(name);
+        return Objects.hash(uuid);
     }
 }

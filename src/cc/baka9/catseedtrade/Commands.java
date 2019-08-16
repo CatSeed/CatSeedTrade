@@ -50,7 +50,7 @@ public class Commands implements CommandExecutor {
                         }
                         return true;
                     }
-                    break;
+                    return false;
                 case "info":
                     if (args.length > 1) {
                         Trade trade = TradeHelper.getTrade(args[1]);
@@ -197,7 +197,7 @@ public class Commands implements CommandExecutor {
                                 player.spigot().sendMessage(tc);
                             }
                             player.sendMessage("§e当前页数 " + page + " / " + (int) Math.ceil(TradeHelper.getList().size() / (double) eachCount));
-                        } catch (ArrayIndexOutOfBoundsException arrE) {
+                        } catch (ArrayIndexOutOfBoundsException e) {
                             player.sendMessage("§c你输入的页数过大");
                         }
                     } catch (NumberFormatException e) {
@@ -298,35 +298,45 @@ public class Commands implements CommandExecutor {
         sender.sendMessage(sb);
     }
 
-    //"create", "info", "player", "kick", "join", "leave", "disable", "accept", "deny", "tops", "bio"
+    /**
+     * "create", "info", "player", "kick", "join", "leave", "disable", "accept", "deny", "tops", "bio"
+     */
     public static class Tab implements TabCompleter {
         List<String> empty = new ArrayList<>();
-        List<String> arg_1_joined = Arrays.asList("info <工会名> 查看指定公会详情", "player <玩家名> 查看这个玩家所在的公会详情", "leave <工会名> 离开工会", "tops <页数> 查看工会排行");
-        List<String> arg_1_noJoin = Arrays.asList("create <工会名> 创建工会", "info <工会名> 查看指定公会详情", "player <玩家名> 查看这个玩家所在的公会详情", "join <工会名> 请求进入工会", "tops <页数> 查看工会排行");
-        List<String> arg_1_owner = Arrays.asList("info <工会名> 查看指定公会详情", "player <玩家名> 查看这个玩家所在的公会详情", "kick <玩家名> 将玩家从工会踢出", "accept <玩家名> 同意玩家进入工会", "deny <玩家名> 拒绝玩家进入工会", "tops <页数> 查看工会排行", "bio <介绍> 设置工会的介绍标语");
+        List<String> arg1Joined = Arrays.asList("info <工会名> 查看指定公会详情", "player <玩家名> 查看这个玩家所在的公会详情", "leave <工会名> 离开工会", "tops <页数> 查看工会排行");
+        List<String> arg1NoJoin = Arrays.asList("create <工会名> 创建工会", "info <工会名> 查看指定公会详情", "player <玩家名> 查看这个玩家所在的公会详情", "join <工会名> 请求进入工会", "tops <页数> 查看工会排行");
+        List<String> arg1Owner = Arrays.asList("info <工会名> 查看指定公会详情", "player <玩家名> 查看这个玩家所在的公会详情", "kick <玩家名> 将玩家从工会踢出", "accept <玩家名> 同意玩家进入工会", "deny <玩家名> 拒绝玩家进入工会", "tops <页数> 查看工会排行", "bio <介绍> 设置工会的介绍标语");
 
         @Override
         public List<String> onTabComplete(CommandSender commandSender, Command command, String s, String[] args){
-            if (!(commandSender instanceof Player)) return empty;
+            if (!(commandSender instanceof Player)) {
+                return empty;
+            }
             Player player = (Player) commandSender;
             Trade trade = TradeHelper.getPlayerEnterTrade(player);
             if (args.length == 1) {
                 List<String> list = new ArrayList<>();
-                String arg_1 = args[0];
+                String arg1 = args[0];
                 if (trade == null) {
-                    arg_1_noJoin.forEach(info -> {
-                        if (info.startsWith(arg_1)) list.add(info);
+                    arg1NoJoin.forEach(info -> {
+                        if (info.startsWith(arg1)) {
+                            list.add(info);
+                        }
                     });
                     return list;
                 }
                 if (trade.getOwner().equals(player.getName())) {
-                    arg_1_owner.forEach(info -> {
-                        if (info.startsWith(arg_1)) list.add(info);
+                    arg1Owner.forEach(info -> {
+                        if (info.startsWith(arg1)) {
+                            list.add(info);
+                        }
                     });
                     return list;
                 }
-                arg_1_joined.forEach(info -> {
-                    if (info.startsWith(arg_1)) list.add(info);
+                arg1Joined.forEach(info -> {
+                    if (info.startsWith(arg1)) {
+                        list.add(info);
+                    }
                 });
                 return list;
 
@@ -336,7 +346,9 @@ public class Commands implements CommandExecutor {
                 case "create":
                     return Collections.singletonList("<工会名> 创建工会");
                 case "info":
-                    for (Trade t : TradeHelper.getList()) list.add(t.getName());
+                    for (Trade t : TradeHelper.getList()) {
+                        list.add(t.getName());
+                    }
                     return list;
                 case "player":
                     for (Trade t : TradeHelper.getList()) {

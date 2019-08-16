@@ -10,10 +10,10 @@ import java.util.*;
 
 public class TradeHelper {
 
-    private static final List<Trade> list = new ArrayList<>();
+    private static final List<Trade> LIST = new ArrayList<>();
 
     public static List<Trade> getList(){
-        return list;
+        return LIST;
     }
 
     /**
@@ -40,11 +40,14 @@ public class TradeHelper {
             throws TradeHaveThisPlayerException, PlayerJoinedTradeException, TradeMemberFullException{
         Trade playerEnterTrade = getPlayerEnterTrade(playerName);
         if (playerEnterTrade != null) {
-            if (playerEnterTrade == trade)
+            if (playerEnterTrade == trade) {
                 throw new TradeHaveThisPlayerException(trade.getName() + " 工会已经存在 " + playerName + " 了");
+            }
             throw new PlayerJoinedTradeException(playerName, playerEnterTrade);
         }
-        if (memberNumberIsFull(trade)) throw new TradeMemberFullException(trade.getName() + " 工会成员已满人");
+        if (memberNumberIsFull(trade)) {
+            throw new TradeMemberFullException(trade.getName() + " 工会成员已满人");
+        }
         trade.getMember().put(playerName, 0.0);
     }
 
@@ -85,10 +88,11 @@ public class TradeHelper {
      * @return 玩家已经进入的工会 没有为null
      */
     public static Trade getPlayerEnterTrade(String playerName){
-        for (Trade trade : TradeHelper.list) {
+        for (Trade trade : TradeHelper.LIST) {
             for (String name : trade.getMember().keySet()) {
-                if (name.equalsIgnoreCase(playerName.toLowerCase()))
+                if (name.equalsIgnoreCase(playerName.toLowerCase())) {
                     return trade;
+                }
             }
         }
         return null;
@@ -112,7 +116,7 @@ public class TradeHelper {
         if (!trade.getRequest().contains(playerName)) {
             throw new NotRequestException(trade.getName() + " 工会没有 " + playerName + " 的加入请求");
         }
-        list.forEach(t -> t.getRequest().remove(playerName));
+        LIST.forEach(t -> t.getRequest().remove(playerName));
         TradeHelper.addTradeMember(trade, playerName);
     }
 
@@ -149,7 +153,7 @@ public class TradeHelper {
      * @return 工会 没有则为 null
      */
     public static Trade getTrade(String tradeName){
-        for (Trade trade : list) {
+        for (Trade trade : LIST) {
             if (trade.getName().equalsIgnoreCase(tradeName)) {
                 return trade;
             }
@@ -158,7 +162,7 @@ public class TradeHelper {
     }
 
     public static Trade createTrade(String tradeName, String playerName) throws TradeExistenceException, TradeOwnerException{
-        for (Trade trade : list) {
+        for (Trade trade : LIST) {
             if (trade.getName().equalsIgnoreCase(tradeName)) {
                 throw new TradeExistenceException(tradeName + "工会已经存在了");
             }
@@ -167,18 +171,21 @@ public class TradeHelper {
 
             }
         }
-        Trade trade = new Trade(tradeName, "还没有任何介绍~", playerName, Collections.singletonMap(playerName, 0.0), 0, new HashSet<>(), 0);
-        list.add(trade);
+        Trade trade = new Trade(UUID.randomUUID(), tradeName, "还没有任何介绍~", playerName, Collections.singletonMap(playerName, 0.0), 0, new HashSet<>(), 0);
+        LIST.add(trade);
         return trade;
     }
 
     public static Trade ownerDisableTrade(String playerName)
             throws PlayerNotJoinTradeException, TradeOwnerNotThisPlayerException{
         Trade trade = getPlayerEnterTrade(playerName);
-        if (trade == null) throw new PlayerNotJoinTradeException(playerName);
-        if (!trade.getOwner().equalsIgnoreCase(playerName))
+        if (trade == null) {
+            throw new PlayerNotJoinTradeException(playerName);
+        }
+        if (!trade.getOwner().equalsIgnoreCase(playerName)) {
             throw new TradeOwnerNotThisPlayerException(playerName + " 不是 " + trade.getName() + " 工会的主人");
-        list.remove(trade);
+        }
+        LIST.remove(trade);
         return trade;
     }
 
@@ -208,7 +215,9 @@ public class TradeHelper {
         List<Map.Entry<String, Double>> member = new ArrayList<>(trade.getMember().entrySet());
         member.sort(comparator.reversed());
         for (Map.Entry<String, Double> entry : member) {
-            if (entry.getKey().equalsIgnoreCase(trade.getOwner())) continue;
+            if (entry.getKey().equalsIgnoreCase(trade.getOwner())) {
+                continue;
+            }
             showText.append("§b").append(entry.getKey()).append(" §a贡献- ").append(entry.getValue()).append("\n");
         }
         TextComponent tc = new TextComponent("§l#" + (TradeHelper.getTopTrades().indexOf(trade) + 1) + " §6" + trade.getName() + "§9(§c等级 " + trade.getLevel() + " §e经验 " + trade.getExp() + " / " + trade.calcCurrentMaxExp() + "§9)");
